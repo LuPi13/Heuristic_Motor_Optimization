@@ -32,6 +32,7 @@ function launch_heuristic_motor_optimization()
 
     TR = get_TR(min_vector); % 최적화된 벡터를 사용하여 TR 계산
 
+    % 최적화된 모터의 개별 요소는 heuristic_optimization.m에서 출력됨
     fprintf('최적화된 토크: %.2f Nm\n', TR(1)); % 최적화된 토크 출력
     fprintf('최적화된 리플: %.2f %%\n', TR(2)); % 최적화된 리플 출력
 end

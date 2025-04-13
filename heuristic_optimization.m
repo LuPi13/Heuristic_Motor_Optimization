@@ -102,3 +102,4 @@ function min_vector = heuristic_optimization(x)
         fprintf('\n');
     end
     min_vector = best_vector;
+end
