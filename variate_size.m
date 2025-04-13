@@ -11,9 +11,9 @@ mi_saveas([name_fem]); %파일 저장
 
 %%%%%%%%%%%%%%%%%%%%%%%%% 변수 설정 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 스테이터 변수
-depth_list=linspace(100, 200, 10);  %화면방향 깊이
+depth=100;  %화면방향 깊이 = 자석의 깊이 100mm
 slot_number= 3; % 슬롯 개수 설정
-r_so=100;   % 스테이터 직경 100
+r_so_list=linspace(100, 300, 10);   % 스테이터 직경 100
 r_si=60; % r_so - r_rotor_outer > r_si
 
 th_core=2; %스테이터 두께
@@ -67,23 +67,39 @@ mi_addmaterial('c-', 1, 1, 0, 0, 56)
 mi_addboundprop('A_0',0,0,0,0);	%도화지의 태두리 기본 설정
 
 %%%%%%%%%%%%%%%%%%%%%%%%   도화지 설정   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for depth = depth_list
-    mi_probdef(0,'millimeters','planar',1e-009,depth,30); % 문제 단위와 형상 설정
+mi_probdef(0,'millimeters','planar',1e-009,depth,30); % 문제 단위와 형상 설정
 
-    square=1000;    % FEMM 도화지 크기
-    drawrectangle(-square/2,-square/2,square/2,square/2);
-    mi_selectrectangle(-square/2,-square/2,square/2,square/2,4);
+square=1000;    % FEMM 도화지 크기
+drawrectangle(-square/2,-square/2,square/2,square/2);
+mi_selectrectangle(-square/2,-square/2,square/2,square/2,4);
 
-    mi_setsegmentprop('A_0',0, 1,0,100); %바운다리 컨디션 설정
-    add_label(0,square/2-1,'Air',0,11); %도화지 물성치 설정
+mi_setsegmentprop('A_0',0, 1,0,100); %바운다리 컨디션 설정
 
-    mi_clearselected();
-    mi_zoomnatural();
+mi_clearselected();
+mi_zoomnatural();
+
+for r_so = r_so_list
+    %모터 크기 변경에 따른 변수 재설정; r_so에 대해 비례적으로 설정
+    r_si=60 * (r_so/100);
+    r_rotor_outer=55 * (r_so/100); %로터 바깥쪽 반지름
+    th_core=2 * (r_so/100); %스테이터 두께
+    w_teeth=20 * (r_so/100); % 코일간의 거리
+    shoe_1=10 * (r_so/100); % 슬롯 슈1 크기
+    shoe_2=10 * (r_so/100); % 슬롯 슈2 크기
+    c_w=10 * (r_so/100); %코일의 너비
+    c_h=10 * (r_so/100); %코일의 높이
+    l_c=85 * (r_so/100); %중심점(0,0)으로 부터의 코일 위치
+    m_w=30 * (r_so/100); %자석의 너비
+    m_th=10 * (r_so/100); %자석의 높이
+    l_m=40 * (r_so/100); %중심점(0,0)으로부터의 자석 위치
+
+
 
     %도화지 초기화
     mi_selectcircle(0,0,r_so*2.1,4); %도화지 선택
     mi_deleteselected(); %도화지 삭제
     %%%%%%%%%%%%%%%%%%%%%%%%  스테이터 그리기  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    add_label(0,square/2-10,'Air',0,11); %도화지 물성치 설정
 
     % 스테이터 외부 원 그리기
     x1=0;y1=0;
@@ -204,7 +220,7 @@ for depth = depth_list
         mo_groupselectblock(10); %로터 선택
 
         T(kk) = mo_blockintegral(22); %로터 토크 불러오기
-        T_list=[T_list;T(kk)]; %토크 결과 저장
+        T_list = [T_list;T(kk)]; %토크 결과 저장
 
         mo_close; %해석 결과 닫기, 설정창으로 복귀
 
@@ -220,17 +236,16 @@ end
 
 figure(1)
 % set(gcf,'Position',[100 100 900 400]); % 가로로 긴 창 (가로 900, 세로 400)
-xlabel('Depth [mm]');
+xlabel('Rotor-outer-radius[mm]');
 
 yyaxis left;
-plot(depth_list,T_average_result,'b-','LineWidth',2); % 전류밀도에 따른 토크 그래프
+plot(r_so_list,T_average_result,'b-','LineWidth',2); % 전류밀도에 따른 토크 그래프
 ylabel('Torque[Nm]');
 
 yyaxis right;
-plot(depth_list,T_ripple_result,'r--','LineWidth',2); % 전류밀도에 따른 리플 토크 그래프
-ylim([10.49, 10.50]);
+plot(r_so_list,T_ripple_result,'r--','LineWidth',2); % 전류밀도에 따른 리플 토크 그래프
 ylabel('Ripple Torque[%]');
 
 grid on;
 axis auto;
-title('Torque-Depth Characteristics');
+title('Torque-Size Characteristics');

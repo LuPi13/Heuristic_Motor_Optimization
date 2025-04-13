@@ -11,7 +11,7 @@ mi_saveas([name_fem]); %파일 저장
 
 %%%%%%%%%%%%%%%%%%%%%%%%% 변수 설정 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 스테이터 변수
-depth_list=linspace(100, 200, 10);  %화면방향 깊이
+depth=100;  %화면방향 깊이
 slot_number= 3; % 슬롯 개수 설정
 r_so=100;   % 스테이터 직경 100
 r_si=60; % r_so - r_rotor_outer > r_si
@@ -54,7 +54,9 @@ Hc=900000;                  % 영구자석 보자력 설정
 mi_addmaterial('N4X',1.05,1.05,Hc,0,0.56); % 영구자석 물성치 정의
 mi_getmaterial('Air');      % FEMM 내장 공기 물성 불러오기
 mi_getmaterial('M-19 Steel');  % FEMM 내장 철심 재료 불러오기
-mi_modifymaterial('M-19 Steel',0,'35H270');   % 철심 물성 수정
+mi_modifymaterial('M-19 Steel',0,'35H440');   % 철심 물성 수정
+
+choose_best = [0 1]; %0이면 air, 1이면 테스트로 결정한 변수로 재제작
 
 % 코일 재료 정의 (전류 밀도는 나중에 수정)
 mi_addmaterial('a+', 1, 1, 0, 0, 56)
@@ -67,7 +69,38 @@ mi_addmaterial('c-', 1, 1, 0, 0, 56)
 mi_addboundprop('A_0',0,0,0,0);	%도화지의 태두리 기본 설정
 
 %%%%%%%%%%%%%%%%%%%%%%%%   도화지 설정   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for depth = depth_list
+for best = choose_best
+    if best == 1
+        % 테스트로 확인한 최대효율의 변수로 설정
+        depth=200;  %화면방향 깊이
+        slot_number= 3; % 슬롯 개수 설정
+        r_so=300;   % 스테이터 직경 100
+        r_si=180; % r_so - r_rotor_outer > r_si
+
+        th_core=6; %스테이터 두께
+        w_teeth=60; % 코일간의 거리
+        slot_ratio=0.25; % 슬롯 비율
+        shoe_1=30; % 슬롯 슈1 크기
+        shoe_2=30; % 슬롯 슈2 크기
+
+        % 코일 변수
+        c_w=30; %코일의 너비
+        c_h=30; %코일의 높이
+        l_c=255; %중심점(0,0)으로 부터의 코일 위치
+
+        % 로터 변수
+        r_rotor_outer=165; %로터 바깥쪽 반지름
+
+        % 자석 변수
+        num_pole=4;       %회전자 자석 개수
+        m_w=90;           %자석의 너비
+        m_th=30;           %자석의 높이
+        l_m=120;           %중심점(0,0)으로부터의 자석 위치
+
+
+        % 회전 자계, 전류 밀도 변수
+        J_rated=5; %코일영역 전류밀도
+    end
     mi_probdef(0,'millimeters','planar',1e-009,depth,30); % 문제 단위와 형상 설정
 
     square=1000;    % FEMM 도화지 크기
@@ -75,7 +108,6 @@ for depth = depth_list
     mi_selectrectangle(-square/2,-square/2,square/2,square/2,4);
 
     mi_setsegmentprop('A_0',0, 1,0,100); %바운다리 컨디션 설정
-    add_label(0,square/2-1,'Air',0,11); %도화지 물성치 설정
 
     mi_clearselected();
     mi_zoomnatural();
@@ -84,6 +116,7 @@ for depth = depth_list
     mi_selectcircle(0,0,r_so*2.1,4); %도화지 선택
     mi_deleteselected(); %도화지 삭제
     %%%%%%%%%%%%%%%%%%%%%%%%  스테이터 그리기  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    add_label(0,square/2-10,'Air',0,11); %도화지 물성치 설정
 
     % 스테이터 외부 원 그리기
     x1=0;y1=0;
@@ -137,8 +170,16 @@ for depth = depth_list
     % 코일 및스테이터 형상 회전 복사
     mi_selectcircle(0,0,r_so*2.1,4);
     mi_mirror2(0,0,0,10,4);
+
+    if best == 1 % 35H440을 teeth에 삽입
+        mi_addsegment(-(r_so-th_core)*cos(pi/2-(asin(w_teeth*0.5/(r_so-th_core)))),(r_so-th_core)*sin(pi/2-(asin(w_teeth*0.5/(r_so-th_core)))), ...
+        (r_so-th_core)*cos(pi/2-(asin(w_teeth*0.5/(r_so-th_core)))),(r_so-th_core)*sin(pi/2-(asin(w_teeth*0.5/(r_so-th_core)))));
+        add_label(0, r_so-th_core-5, '35H440', 0, 11); % teeth 내부 물성치
+    end
+
     mi_selectcircle(0,0,r_so-1,4);
     mi_copyrotate2(0,0,360/slot_number,slot_number,4);
+
 
     add_label(0, r_so-0.1, 'Air', 0, 11); % 스테이터 내부 공기 물성
 
@@ -220,17 +261,16 @@ end
 
 figure(1)
 % set(gcf,'Position',[100 100 900 400]); % 가로로 긴 창 (가로 900, 세로 400)
-xlabel('Depth [mm]');
+xlabel('Is-BestTest [Boolean]');
 
 yyaxis left;
-plot(depth_list,T_average_result,'b-','LineWidth',2); % 전류밀도에 따른 토크 그래프
+plot(choose_best,T_average_result,'b-','LineWidth',2); % 전류밀도에 따른 토크 그래프
 ylabel('Torque[Nm]');
 
 yyaxis right;
-plot(depth_list,T_ripple_result,'r--','LineWidth',2); % 전류밀도에 따른 리플 토크 그래프
-ylim([10.49, 10.50]);
+plot(choose_best,T_ripple_result,'r--','LineWidth',2); % 전류밀도에 따른 리플 토크 그래프
 ylabel('Ripple Torque[%]');
 
 grid on;
 axis auto;
-title('Torque-Depth Characteristics');
+title('Torque by Best Test');

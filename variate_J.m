@@ -1,6 +1,3 @@
-%에너지변환공학_HW5_강예구_ver1
-%모터 최적 설계
-
 clear all; clc; close all;
 
 % addpath('C:\femm42\mfiles')  % FEMM의 m파일 경로 추가
@@ -8,9 +5,9 @@ clear all; clc; close all;
 openfemm; %FEMM실행
 newdocument(0);             %새 Document 창 실행(정자계 해석)
 
-path='C:\Users\lupi1\Documents\살려주세요\에변공\HW5\';          %Path 설정
+% path='C:\Users\lupi1\Documents\살려주세요\에변공\HW5\';          %Path 설정
 name_fem='motor_example.fem';   %파일 이름 설정
-mi_saveas([path,name_fem]); %파일 저장
+mi_saveas([name_fem]); %파일 저장
 
 %%%%%%%%%%%%%%%%%%%%%%%%% 변수 설정 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 스테이터 변수
@@ -43,9 +40,10 @@ l_m=40;           %중심점(0,0)으로부터의 자석 위치
 % 회전 자계, 전류 밀도 변수
 gamma=0; %전류각, SPM은 0도로 고정
 N=36; %0도부터 360까지 몇번에 걸쳐 회전시킬지
-J_rated=linspace(0, 5, 10); %코일영역 전류밀도를 0부터 5까지 10개로 나누기
+J_rated=linspace(1, 5, 10); %코일영역 전류밀도를 1부터 5까지 10개로 나누기
 
-T_result=[]; %토크 결과 저장
+T_average_result=[]; %토크 결과 저장
+T_ripple_result=[]; %리플 토크 결과 저장
 
 %%%%%%%%%%%%%%%%%%%%%%%%% 파일 저장 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -206,7 +204,7 @@ for j = J_rated
         mo_groupselectblock(10); %로터 선택
 
         T(kk) = mo_blockintegral(22); %로터 토크 불러오기
-        T_list=[T_list;T(kk)]; %토크 결과 저장
+        T_list = [T_list;T(kk)]; %토크 결과 저장
 
         mo_close; %해석 결과 닫기, 설정창으로 복귀
 
@@ -216,14 +214,22 @@ for j = J_rated
         mi_moverotate(0,0,theta_mech_inc*180/pi); %로터랑 로터 물성치 회전
 
     end
-    T_result=[T_result; mean(T_list)]; %토크 결과 저장
+    T_average_result = [T_average_result; mean(T_list)]; %토크 결과 저장
+    T_ripple_result = [T_ripple_result; 100 * (max(T_list) - min(T_list)) / mean(T_list)]; %리플 토크 결과 저장
 end
 
 figure(1)
 % set(gcf,'Position',[100 100 900 400]); % 가로로 긴 창 (가로 900, 세로 400)
-plot(J_rated,T_result,'r-','LineWidth',2); % 전류밀도에 따른 토크 그래프
-axis auto;
-ylabel('Torque[Nm]');
 xlabel('J[A/mm^2]');
+
+yyaxis left;
+plot(J_rated,T_average_result,'b-','LineWidth',2); % 전류밀도에 따른 토크 그래프
+ylabel('Torque[Nm]');
+
+yyaxis right;
+plot(J_rated,T_ripple_result,'r--','LineWidth',2); % 전류밀도에 따른 리플 토크 그래프
+ylabel('Ripple Torque[%]');
+
 grid on;
+axis auto;
 title('Torque-J Characteristics');
