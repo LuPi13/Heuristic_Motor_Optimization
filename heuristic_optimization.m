@@ -8,7 +8,7 @@ function min_vector = heuristic_optimization(x)
     
     %% 파라미터 설정
     P = 100; % P: Population size; 연산 시간에 비례. 차원*10 권장
-    G = 300; % G: Generation size; 연산 시간에 비례. 300~500 권장
+    G = 100; % G: Generation size; 연산 시간에 비례. 300~500 권장
     F = 0.5; % F: Mutation factor; 0 < F < 1
     CR = 0.9; % CR: Crossover rate; 0 < CR < 1
 
