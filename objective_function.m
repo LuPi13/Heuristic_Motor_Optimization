@@ -12,7 +12,7 @@ function cost = objective_function(TR)
     w_R = 0.2; % 리플 가중치
     lambda_R = 1; % 리플이 10% 이상일 경우 페널티 가중치
 
-    ref_T = 5.0; % 토크 예상치
+    ref_T = 10.0; % 토크 예상치
     ref_R = 10; % 리플 예상치
 
     cost = -w_T * (T / ref_T) + w_R * (R / ref_R) + lambda_R * (R > 10) * (R - 10)^2;

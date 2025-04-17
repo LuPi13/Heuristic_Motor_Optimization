@@ -19,15 +19,12 @@ function min_vector = heuristic_optimization(x)
 
     %% 첫 개체군 생성; 랜덤
     for i = 1:P
-        volunteer = zeros(1, dimension); % 개체 초기화
         is_valid = false; % 유효성 검사 플래그
         while ~is_valid
-            for d = 1:dimension
-                volunteer(1, d) = x(d, 1) + (x(d, 2) - x(d, 1)) * rand(); % 범위 내 랜덤 값 생성
-            end
+            volunteer = make_valid_input(x); % 유효한 입력 생성
             result = objective_function(get_TR(volunteer)); % 결과값 계산
 
-            if result < 1e10 % 유효한 개체인지 검사
+            if result < 1e10 && result > -100 % 유효한 개체인지 검사
                 population(i, :) = volunteer; % 유효한 개체군에 추가
                 indiv_result(i) = result; % 결과값 저장
                 is_valid = true; % 유효성 플래그 설정

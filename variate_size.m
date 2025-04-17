@@ -236,7 +236,7 @@ end
 
 figure(1)
 % set(gcf,'Position',[100 100 900 400]); % 가로로 긴 창 (가로 900, 세로 400)
-xlabel('Rotor-outer-radius[mm]');
+xlabel('Stator-outer-radius[mm]');
 
 yyaxis left;
 plot(r_so_list,T_average_result,'b-','LineWidth',2); % 전류밀도에 따른 토크 그래프

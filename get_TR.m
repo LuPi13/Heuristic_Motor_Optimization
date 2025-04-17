@@ -3,7 +3,7 @@ function TR = get_TR(x)
     % x: [x1, x2, x3, ...] 형태의 벡터로, 모터의 파라미터를 나타냄
     % x1: depth, x2: r_so, x3: r_si, x4: w_teeth, x5: slot_ratio, x6: shoe_1
     % x7: shoe_2, x8: c_w, x9: c_h, x10: l_c, x11: r_rotor_outer, x12: m_w
-    % x13: m_th, x14: l_m, x15: J_rated, x16: use_35H440
+    % x13: m_th, x14: l_m, x15: J_rated, x16: use_35HH40_in_teeth
 
 
     % [T R]의 형태로 출력
@@ -25,7 +25,8 @@ function TR = get_TR(x)
         r_so=x(2); % 스테이터 직경
         r_si=x(3); % 스테이터 내경(슬롯 거리)
         if r_si >= r_so % r_si는 r_so보다 작아야 함
-            r_si = r_so - 10;
+            r_si = r_so - 1;
+            % fprintf('r_si가 다음으로 설정되었습니다: %f\n', r_si);
         end
 
         th_core=x(4); %스테이터 두께
@@ -39,25 +40,29 @@ function TR = get_TR(x)
         c_h=x(10); %코일의 높이
         l_c=x(11); %중심점(0,0)으로 부터의 코일 위치
         if l_c - c_h < r_si % 코일의 위치는 r_si보다 바깥에 위치해야 함
-            l_c = r_si + c_h + 10;
+            l_c = r_si + c_h + 1;
+            % fprintf('l_c가 다음으로 설정되었습니다: %f\n', l_c);
         end
         if l_c + c_h > r_so % 코일의 위치는 r_so보다 안쪽에 위치해야 함
-            l_c = r_so - c_h - 10;
+            l_c = r_so - c_h - 1;
+            % fprintf('l_c가 다음으로 설정되었습니다: %f\n', l_c);
         end
 
-        %shoe의 합은 l_c - r_si보다 작아야함
+        % shoe의 합은 l_c - r_si보다 작아야함
         max_shoe = l_c - r_si;
         sum = shoe_1 + shoe_2;
         if sum > max_shoe % shoe의 합이 l_c - r_si보다 크면 안됨
             shoe_1 = max(shoe_1 * max_shoe / sum - c_h / 2, 0);
             shoe_2 = max(shoe_2 * max_shoe / sum - c_h / 2, 0);
+            % fprintf('shoe_1과 shoe_2가 다음으로 설정되었습니다: %f, %f\n', shoe_1, shoe_2);
         end
 
 
         % 로터 변수
         r_rotor_outer=x(12); %로터 바깥쪽 반지름
         if r_rotor_outer >= r_si % r_rotor_outer는 r_si보다 작아야 함
-            r_rotor_outer = r_si - 10;
+            r_rotor_outer = r_si - 1;
+            % fprintf('r_rotor_outer가 다음으로 설정되었습니다: %f\n', r_rotor_outer);
         end
 
         % 자석 변수
@@ -65,19 +70,22 @@ function TR = get_TR(x)
         m_th=x(14); %자석의 높이
         l_m=x(15); %중심점(0,0)으로부터의 자석 위치
         if l_m + m_th > r_rotor_outer % 자석의 위치는 r_rotor_outer보다 안쪽에 위치해야 함
-            l_m = r_rotor_outer - m_th - 10;
+            l_m = r_rotor_outer - m_th - 1;
+            % fprintf('l_m가 다음으로 설정되었습니다: %f\n', l_m);
         end
 
 
         % 회전 자계, 전류 밀도 변수
         J_rated=x(16); %코일영역 전류밀도
-        use_35H440=x(17); % 35H440 자재 사용 여부
+        use_35HH40_in_teeth=x(17); % teeth에 35H440 자재 사용 여부
+        use_35HH40_in_rotor=x(18); % 회전자에 35H440 자재 사용 여부
+
+        slot_number=x(19) * 3; % 슬롯 개수 설정
+        num_pole=x(20) * 2; %회전자 자석 개수
 
         % 변화 없는 변수
-        slot_number=3; % 슬롯 개수 설정
-        num_pole=4;       %회전자 자석 개수
         gamma=0; %전류각, SPM은 0도로 고정
-        N=36; %0도부터 360까지 몇번에 걸쳐 회전시킬지
+        N=6; %0도부터 360까지 몇번에 걸쳐 회전시킬지
 
         %%%%%%%%%%%%%%%%%%%%%%%%% 파일 저장 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -166,15 +174,14 @@ function TR = get_TR(x)
         % 코일 및스테이터 형상 회전 복사
         mi_selectcircle(0,0,r_so*2.1,4);
         mi_mirror2(0,0,0,10,4);
-        if use_35H440 >= 0.5 % 35H440을 teeth에 삽입
-            mi_addsegment(-(r_so-th_core)*cos(pi/2-(asin(w_teeth*0.5/(r_so-th_core)))),(r_so-th_core)*sin(pi/2-(asin(w_teeth*0.5/(r_so-th_core)))), ...
-            (r_so-th_core)*cos(pi/2-(asin(w_teeth*0.5/(r_so-th_core)))),(r_so-th_core)*sin(pi/2-(asin(w_teeth*0.5/(r_so-th_core)))));
-            add_label(0, r_so-th_core*2, '35H440', 0, 11); % teeth 내부 물성치
-        end
         mi_selectcircle(0,0,r_so-1,4);
         mi_copyrotate2(0,0,360/slot_number,slot_number,4);
 
-        add_label(0, r_so-0.1, 'Air', 0, 11); % 스테이터 내부 공기 물성
+        if use_35HH40_in_teeth >= 0.5 % 35H440을 teeth에 삽입
+            add_label(0, r_so-0.1, '35H440', 0, 11); % 스테이터 내부 공기 물성
+        else
+            add_label(0, r_so-0.1, 'Air', 0, 11); % 스테이터 내부 공기 물성
+        end
 
         %%%%%%%%%%%%%%%%%%%%%%%로터(회전자) 그리기%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -186,13 +193,25 @@ function TR = get_TR(x)
         mi_selectrectangle(-m_w/2,l_m-m_th/2,m_w/2,l_m+m_th/2,4); %자석 선택
         mi_copyrotate2(0,0,360/num_pole,num_pole,4); %처음 그린 자석을 (0,0) 원점 기준으로 360/num_pole 각도로 num_pole 개수만큼 카피
 
-        %자석 물성치 설정
-        add_label(0,l_m,'N42',90,10); %자석 물성치, 자화방향 설정
-        add_label(0,-l_m,'N42',-90,10); %자석 물성치, 자화방향 설정
-        add_label(l_m,0,'N42',-180,10); %자석 물성치, 자화방향 설정
-        add_label(-l_m,0,'N42',0,10); %자석 물성치, 자화방향 설정
+        % %자석 물성치 설정
+        for i=1:num_pole
+            pole_y = l_m*cos((2*pi/num_pole)*(i-1)); % 자석의 x좌표
+            pole_x = l_m*sin((2*pi/num_pole)*(i-1)); % 자석의 y좌표
+            if (mod(i,2)==1)
+                add_label(pole_x, pole_y,'N42',rad2deg(-(2*pi/num_pole)*(i-1))+90,10); %자석 물성치, 자화방향 설정
+            else
+                add_label(pole_x, pole_y,'N42',rad2deg(-(2*pi/num_pole)*(i-1))-90,10); %자석 물성치, 자화방향 설정
+            end
+        end
+        % add_label(0,-l_m,'N42',-90,10); %자석 물성치, 자화방향 설정
+        % add_label(l_m,0,'N42',-180,10); %자석 물성치, 자화방향 설정
+        % add_label(-l_m,0,'N42',0,10); %자석 물성치, 자화방향 설정
 
-        add_label(0,0,'Air',0,10); %로터(회전자) 물성치 설정
+        if use_35HH40_in_rotor >= 0.5 % 35H440을 rotor에 삽입
+            add_label(0,0,'35H440',0,10); %로터(회전자) 물성치 설정
+        else
+            add_label(0,0,'Air',0,10); %로터(회전자) 물성치 설정
+        end
         add_label(0, r_rotor_outer+0.1, 'Air', 0, 12); % 로터와 슬롯 사이의 물성치
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 코일 물성치 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -200,13 +219,20 @@ function TR = get_TR(x)
         %코일 개수가 많으면 for 문 사용
         coil_angle=atan((w_teeth/2+c_w/2)/l_c); % 중심 기준 각도
         coil_r=sqrt((w_teeth/2+c_w/2)^2+l_c^2); % 중심까지 반경
-        add_label(coil_r*cos(pi/2+coil_angle),coil_r*sin(pi/2+coil_angle),'a+',0,20); %Coil 물성치
-        add_label(coil_r*cos(pi/2-coil_angle),coil_r*sin(pi/2-coil_angle),'a-',0,20); %Coil 물성치
-        add_label(coil_r*cos(pi/2+coil_angle-pi*2/3),coil_r*sin(pi/2+coil_angle-pi*2/3),'b+',0,20); %Coil 물성치
-        add_label(coil_r*cos(pi/2-coil_angle-pi*2/3),coil_r*sin(pi/2-coil_angle-pi*2/3),'b-',0,20); %Coil 물성치
-        add_label(coil_r*cos(pi/2+coil_angle+pi*2/3),coil_r*sin(pi/2+coil_angle+pi*2/3),'c+',0,20); %Coil 물성치
-        add_label(coil_r*cos(pi/2-coil_angle+pi*2/3),coil_r*sin(pi/2-coil_angle+pi*2/3),'c-',0,20); %Coil 물성치
+        slot_angle=pi*2/slot_number; % 슬롯 각도
 
+        for i=1:slot_number
+            if mod(i, 3)==1
+                add_label(coil_r*cos(pi/2+coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2+coil_angle+(slot_angle*(i-1))),'a+',0,20); %Coil 물성치
+                add_label(coil_r*cos(pi/2-coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2-coil_angle+(slot_angle*(i-1))),'a-',0,20); %Coil 물성치
+            elseif mod(i, 3)==2
+                add_label(coil_r*cos(pi/2+coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2+coil_angle+(slot_angle*(i-1))),'b+',0,20); %Coil 물성치
+                add_label(coil_r*cos(pi/2-coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2-coil_angle+(slot_angle*(i-1))),'b-',0,20); %Coil 물성치
+            else
+                add_label(coil_r*cos(pi/2+coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2+coil_angle+(slot_angle*(i-1))),'c+',0,20); %Coil 물성치
+                add_label(coil_r*cos(pi/2-coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2-coil_angle+(slot_angle*(i-1))),'c-',0,20); %Coil 물성치
+            end
+        end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%% 회전자계 만드는 함수 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -255,6 +281,7 @@ function TR = get_TR(x)
         TR=[mean_T, R]; % [T R] 형태로 출력
     
     catch exception
+        fprintf('Error: %s\n', exception.message);
         TR=[-999999, 999999]; % 모터 시뮬레이션 실패 시 [-999999, 999999] 반환
     end
 end
