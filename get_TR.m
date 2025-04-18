@@ -24,10 +24,10 @@ function TR = get_TR(x)
         depth=x(1); %화면방향 깊이
         r_so=x(2); % 스테이터 직경
         r_si=x(3); % 스테이터 내경(슬롯 거리)
-        if r_si >= r_so % r_si는 r_so보다 작아야 함
-            r_si = r_so - 1;
-            % fprintf('r_si가 다음으로 설정되었습니다: %f\n', r_si);
-        end
+        % if r_si >= r_so % r_si는 r_so보다 작아야 함
+        %     r_si = r_so - 1;
+        %     % fprintf('r_si가 다음으로 설정되었습니다: %f\n', r_si);
+        % end
 
         th_core=x(4); %스테이터 두께
         w_teeth=x(5); % 코일간의 거리
@@ -39,40 +39,40 @@ function TR = get_TR(x)
         c_w=x(9); %코일의 너비
         c_h=x(10); %코일의 높이
         l_c=x(11); %중심점(0,0)으로 부터의 코일 위치
-        if l_c - c_h < r_si % 코일의 위치는 r_si보다 바깥에 위치해야 함
-            l_c = r_si + c_h + 1;
-            % fprintf('l_c가 다음으로 설정되었습니다: %f\n', l_c);
-        end
-        if l_c + c_h > r_so % 코일의 위치는 r_so보다 안쪽에 위치해야 함
-            l_c = r_so - c_h - 1;
-            % fprintf('l_c가 다음으로 설정되었습니다: %f\n', l_c);
-        end
+        % if l_c - c_h < r_si % 코일의 위치는 r_si보다 바깥에 위치해야 함
+        %     l_c = r_si + c_h + 1;
+        %     % fprintf('l_c가 다음으로 설정되었습니다: %f\n', l_c);
+        % end
+        % if l_c + c_h > r_so % 코일의 위치는 r_so보다 안쪽에 위치해야 함
+        %     l_c = r_so - c_h - 1;
+        %     % fprintf('l_c가 다음으로 설정되었습니다: %f\n', l_c);
+        % end
 
-        % shoe의 합은 l_c - r_si보다 작아야함
-        max_shoe = l_c - r_si;
-        sum = shoe_1 + shoe_2;
-        if sum > max_shoe % shoe의 합이 l_c - r_si보다 크면 안됨
-            shoe_1 = max(shoe_1 * max_shoe / sum - c_h / 2, 0);
-            shoe_2 = max(shoe_2 * max_shoe / sum - c_h / 2, 0);
-            % fprintf('shoe_1과 shoe_2가 다음으로 설정되었습니다: %f, %f\n', shoe_1, shoe_2);
-        end
+        % % shoe의 합은 l_c - r_si보다 작아야함
+        % max_shoe = l_c - r_si;
+        % sum = shoe_1 + shoe_2;
+        % if sum > max_shoe % shoe의 합이 l_c - r_si보다 크면 안됨
+        %     shoe_1 = max(shoe_1 * max_shoe / sum - c_h / 2, 0);
+        %     shoe_2 = max(shoe_2 * max_shoe / sum - c_h / 2, 0);
+        %     % fprintf('shoe_1과 shoe_2가 다음으로 설정되었습니다: %f, %f\n', shoe_1, shoe_2);
+        % end
 
 
         % 로터 변수
         r_rotor_outer=x(12); %로터 바깥쪽 반지름
-        if r_rotor_outer >= r_si % r_rotor_outer는 r_si보다 작아야 함
-            r_rotor_outer = r_si - 1;
-            % fprintf('r_rotor_outer가 다음으로 설정되었습니다: %f\n', r_rotor_outer);
-        end
+        % if r_rotor_outer >= r_si % r_rotor_outer는 r_si보다 작아야 함
+        %  r_rotor_outer = r_si - 1;
+        %     % fprintf('r_rotor_outer가 다음으로 설정되었습니다: %f\n', r_rotor_outer);
+        % end
 
         % 자석 변수
         m_w=x(13); %자석의 너비
         m_th=x(14); %자석의 높이
         l_m=x(15); %중심점(0,0)으로부터의 자석 위치
-        if l_m + m_th > r_rotor_outer % 자석의 위치는 r_rotor_outer보다 안쪽에 위치해야 함
-            l_m = r_rotor_outer - m_th - 1;
-            % fprintf('l_m가 다음으로 설정되었습니다: %f\n', l_m);
-        end
+        % if l_m + m_th > r_rotor_outer % 자석의 위치는 r_rotor_outer보다 안쪽에 위치해야 함
+        %     l_m = r_rotor_outer - m_th - 1;
+        %     % fprintf('l_m가 다음으로 설정되었습니다: %f\n', l_m);
+        % end
 
 
         % 회전 자계, 전류 밀도 변수
@@ -85,7 +85,7 @@ function TR = get_TR(x)
 
         % 변화 없는 변수
         gamma=0; %전류각, SPM은 0도로 고정
-        N=6; %0도부터 360까지 몇번에 걸쳐 회전시킬지
+        N=12; %0도부터 360까지 몇번에 걸쳐 회전시킬지
 
         %%%%%%%%%%%%%%%%%%%%%%%%% 파일 저장 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -279,6 +279,10 @@ function TR = get_TR(x)
         R=100*(max(T_list)-min(T_list))/mean_T; %리플 계산
 
         TR=[mean_T, R]; % [T R] 형태로 출력
+
+        %plot for debug
+        % figure(1);
+        % plot(T_list,'r-','LineWidth',2); %토크 그래프
     
     catch exception
         fprintf('Error: %s\n', exception.message);

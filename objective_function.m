@@ -8,8 +8,8 @@ function cost = objective_function(TR)
     T = TR(1); % 토크
     R = TR(2); % 리플
     
-    w_T = 0.8; % 토크 가중치
-    w_R = 0.2; % 리플 가중치
+    w_T = 0.9; % 토크 가중치
+    w_R = 0.1; % 리플 가중치
     lambda_R = 1; % 리플이 10% 이상일 경우 페널티 가중치
 
     ref_T = 10.0; % 토크 예상치

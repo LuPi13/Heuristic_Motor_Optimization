@@ -12,7 +12,7 @@ function result = make_valid_input(x)
 
     while true
         % 랜덤 값 생성
-        fprintf('Generating random values...\n'); % 디버깅용 출력
+        % fprintf("Generating random values...\n");
         depth = x(1, 1) + (x(1, 2) - x(1, 1)) * rand(); % depth
         r_so = x(2, 1) + (x(2, 2) - x(2, 1)) * rand(); % r_so
         r_si = x(3, 1) + (x(3, 2) - x(3, 1)) * rand(); % r_si
@@ -35,7 +35,7 @@ function result = make_valid_input(x)
         num_pole = round(x(20, 1) + (x(20, 2) - x(20, 1)) * rand()); % num_pole
 
         % 유효성 검사
-        if (r_so < l_c) || (l_c < r_si) || (r_so < r_si) % 외경&코일위치&내경 간섭함
+        if (r_so < l_c) || (l_c < r_si) || (r_so < r_si) || (r_si < r_rotor_outer) % 외경&코일위치&내경&로터 간섭함
             continue; % 유효하지 않음
         
         elseif (l_m < m_th / 2) % 자석 겹침
@@ -44,18 +44,25 @@ function result = make_valid_input(x)
         elseif (sqrt((l_c + (c_h/2))^2 + ((w_teeth/2) + c_w)^2) > (r_so - th_core)) % 외경&코일 간섭함
             continue; % 유효하지 않음
 
-        elseif (sqrt((w_teeth/2)^2 + (l_c - c_h/2)^2)) > (r_si + shoe_1 + shoe_2) % 코일&슬롯 간섭함
+        elseif (sqrt((w_teeth/2)^2 + (l_c - c_h/2)^2)) < (r_si + shoe_1 + shoe_2) % 코일&슬롯 간섭함
             continue; % 유효하지 않음
         
-        elseif (atan(((w_teeth/2) + c_w) / (l_c - (c_h/2))) > pi/slot_number) % 코일끼리 간섭함
+        elseif (atan(((w_teeth/2) + c_w) / (l_c - (c_h/2))) > pi/(slot_number*3)) % 코일끼리 간섭함
             continue; % 유효하지 않음
         
         elseif (sqrt((l_m + (m_th/2))^2 + (m_w/2)^2)) > r_rotor_outer % 로터%자석 간섭함
             continue; % 유효하지 않음
 
-        elseif (atan((m_w/2) / (l_m - m_th/2)) > (pi/num_pole)) % 자석끼리 간섭함
+        elseif (atan((m_w/2) / (l_m - m_th/2)) > (pi/(num_pole*2))) % 자석끼리 간섭함
             continue; % 유효하지 않음
         end
+        % fprintf("r_so: %f, l_c: %f, r_si: %f\n", r_so, l_c, r_si);
+        % fprintf("l_m: %f, m_th: %f\n", l_m, m_th);
+        % fprintf("sqrt: %f, r_so: %f, th_core: %f\n", sqrt((l_c + (c_h/2))^2 + ((w_teeth/2) + c_w)^2), r_so, th_core);
+        % fprintf("sqrt: %f, r_si: %f, shoe_1: %f, shoe_2: %f\n", sqrt((w_teeth/2)^2 + (l_c - c_h/2)^2), r_si, shoe_1, shoe_2);
+        % fprintf("atan: %f, pi/slot_number: %f\n", atan(((w_teeth/2) + c_w) / (l_c - (c_h/2))), pi/slot_number);
+        % fprintf("sqrt: %f, r_rotor_outer: %f\n", sqrt((l_m + (m_th/2))^2 + (m_w/2)^2), r_rotor_outer);
+        % fprintf("atan: %f, pi/num_pole: %f\n", atan((m_w/2) / (l_m - m_th/2)), pi/num_pole);
 
         % 유효한 입력 생성
         result = [depth, r_so, r_si, th_core, w_teeth, slot_ratio, shoe_1, shoe_2, c_w, c_h, l_c, r_rotor_outer, m_w, m_th, l_m, J_rated, use_35H440_in_teeth, use_35H440_in_rotor, slot_number, num_pole];
