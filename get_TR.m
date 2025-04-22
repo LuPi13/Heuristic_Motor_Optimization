@@ -85,7 +85,7 @@ function TR = get_TR(x)
 
         % 변화 없는 변수
         gamma=0; %전류각, SPM은 0도로 고정
-        N=12; %0도부터 360까지 몇번에 걸쳐 회전시킬지
+        N=4; %0도부터 360까지 몇번에 걸쳐 회전시킬지
 
         %%%%%%%%%%%%%%%%%%%%%%%%% 파일 저장 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -108,7 +108,7 @@ function TR = get_TR(x)
         mi_addboundprop('A_0',0,0,0,0);	%도화지의 태두리 기본 설정
 
         %%%%%%%%%%%%%%%%%%%%%%%%   도화지 설정   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        mi_probdef(0,'millimeters','planar',1e-009,depth,30); % 문제 단위와 형상 설정
+        mi_probdef(0,'millimeters','planar',1e-008,depth,30); % 문제 단위와 형상 설정
 
         square=1000;    % FEMM 도화지 크기
         drawrectangle(-square/2,-square/2,square/2,square/2);
@@ -223,20 +223,21 @@ function TR = get_TR(x)
 
         for i=1:slot_number
             if mod(i, 3)==1
-                add_label(coil_r*cos(pi/2+coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2+coil_angle+(slot_angle*(i-1))),'a+',0,20); %Coil 물성치
-                add_label(coil_r*cos(pi/2-coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2-coil_angle+(slot_angle*(i-1))),'a-',0,20); %Coil 물성치
+                add_label(coil_r*cos(pi/2+coil_angle-(slot_angle*(i-1))),coil_r*sin(pi/2+coil_angle-(slot_angle*(i-1))),'a+',0,20); %Coil 물성치
+                add_label(coil_r*cos(pi/2-coil_angle-(slot_angle*(i-1))),coil_r*sin(pi/2-coil_angle-(slot_angle*(i-1))),'a-',0,20); %Coil 물성치
             elseif mod(i, 3)==2
-                add_label(coil_r*cos(pi/2+coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2+coil_angle+(slot_angle*(i-1))),'b+',0,20); %Coil 물성치
-                add_label(coil_r*cos(pi/2-coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2-coil_angle+(slot_angle*(i-1))),'b-',0,20); %Coil 물성치
+                add_label(coil_r*cos(pi/2+coil_angle-(slot_angle*(i-1))),coil_r*sin(pi/2+coil_angle-(slot_angle*(i-1))),'b+',0,20); %Coil 물성치
+                add_label(coil_r*cos(pi/2-coil_angle-(slot_angle*(i-1))),coil_r*sin(pi/2-coil_angle-(slot_angle*(i-1))),'b-',0,20); %Coil 물성치
             else
-                add_label(coil_r*cos(pi/2+coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2+coil_angle+(slot_angle*(i-1))),'c+',0,20); %Coil 물성치
-                add_label(coil_r*cos(pi/2-coil_angle+(slot_angle*(i-1))),coil_r*sin(pi/2-coil_angle+(slot_angle*(i-1))),'c-',0,20); %Coil 물성치
+                add_label(coil_r*cos(pi/2+coil_angle-(slot_angle*(i-1))),coil_r*sin(pi/2+coil_angle-(slot_angle*(i-1))),'c+',0,20); %Coil 물성치
+                add_label(coil_r*cos(pi/2-coil_angle-(slot_angle*(i-1))),coil_r*sin(pi/2-coil_angle-(slot_angle*(i-1))),'c-',0,20); %Coil 물성치
             end
         end
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%% 회전자계 만드는 함수 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        T_list = []; %토크 결과 저장
+        T = zeros(N, 1);
+        T_list = zeros(N, 1); %토크 결과 저장
         for kk=1:N
 
             Jd=-J_rated*sin(gamma); %d축 전류밀도
@@ -264,7 +265,10 @@ function TR = get_TR(x)
             mo_groupselectblock(10); %로터 선택
 
             T(kk) = mo_blockintegral(22); %로터 토크 불러오기
-            T_list = [T_list; T(kk)]; %토크 결과 저장
+            if (kk > 1) && (T(kk) * T(kk-1) < 0) %토크가 앞뒤로 출렁이면
+                error('No negative torque.');
+                break;
+            end
 
             mo_close; %해석 결과 닫기, 설정창으로 복귀
 
@@ -275,17 +279,27 @@ function TR = get_TR(x)
 
         end
 
-        mean_T=mean(T_list); %로터 토크 평균값
-        R=100*(max(T_list)-min(T_list))/mean_T; %리플 계산
+        mean_T=mean(T); %로터 토크 평균값
+        R=100*(max(T)-min(T))/mean_T; %리플 계산
 
         TR=[mean_T, R]; % [T R] 형태로 출력
+        %T_list에 음수가 있으면 모터 시뮬레이션 실패로 간주
+        for t=1:length(T)
+            if T(t) < 0
+                TR=[-999999, 999999]; % 모터 시뮬레이션 실패 시 [-999999, 999999] 반환
+                break;
+            end
+        end
 
-        %plot for debug
+        % plot for debug
         % figure(1);
-        % plot(T_list,'r-','LineWidth',2); %토크 그래프
+        % plot(T,'r-','LineWidth',2); %토크 그래프
     
     catch exception
-        fprintf('Error: %s\n', exception.message);
+        % fprintf('Error: %s\n', exception.message);
         TR=[-999999, 999999]; % 모터 시뮬레이션 실패 시 [-999999, 999999] 반환
+        % plot for debug
+        % figure(1);
+        % plot(T,'r-','LineWidth',2); %토크 그래프
     end
 end

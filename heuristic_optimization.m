@@ -15,6 +15,7 @@ function min_vector = heuristic_optimization(x)
     dimension = size(x, 1); % dimension: number of variables
     population = zeros(P, dimension); % 초기화된 개체군
     indiv_result = zeros(P, 1); % 개체군의 결과값 초기화
+    best_result = [-999999, 999999];
 
 
     %% 첫 개체군 생성; 랜덤
@@ -22,8 +23,9 @@ function min_vector = heuristic_optimization(x)
         is_valid = false; % 유효성 검사 플래그
         while ~is_valid
             volunteer = make_valid_input(x); % 유효한 입력 생성
-            result = objective_function(get_TR(volunteer)); % 결과값 계산
-
+            TR = get_TR(volunteer);
+            result = objective_function(TR); % 결과값 계산
+            
             if result < 1e10 && result > -100 % 유효한 개체인지 검사
                 population(i, :) = volunteer; % 유효한 개체군에 추가
                 indiv_result(i) = result; % 결과값 저장
@@ -31,6 +33,7 @@ function min_vector = heuristic_optimization(x)
             end
         end
         fprintf('Individual %d generated.\n', i); % 개체 생성 완료 메시지 출력
+        fprintf('T: %.4f, R: %.4f \n', TR(1), TR(2));
         fprintf('Time elapsed: %.2f s\n', toc); % 경과 시간 출력
         fprintf('\n');
     end
@@ -38,8 +41,10 @@ function min_vector = heuristic_optimization(x)
 
     [best_cost, best_index] = min(indiv_result); % 최적 비용과 인덱스 초기화
     best_vector = population(best_index, :); % 최적 벡터
+    best_result = get_TR(population(best_index, :));
 
     fprintf('Initial Population generated.\n');
+    fprintf('Best TR: %.4f, %.4f \n', best_result(1), best_result(2));
     fprintf('Time elapsed: %.2f s\n', toc); % 경과 시간 출력
     fprintf('\n')
 
@@ -88,6 +93,7 @@ function min_vector = heuristic_optimization(x)
                 if trial_cost < best_cost % trial 벡터가 최적 벡터보다 더 좋으면
                     best_cost = trial_cost; % 최적 비용 업데이트
                     best_vector = trial; % 최적 벡터 업데이트
+                    best_result = get_TR(trial); % 최적 결과
                 end
             end
         end
@@ -95,7 +101,9 @@ function min_vector = heuristic_optimization(x)
         fprintf('Time elapsed: %.2f s\n', elapsed_time);
         fprintf('Generation %d: Best Cost = %.4f\n', gen, best_cost); % 세대별 결과 출력
         fprintf('Best Vector: ');
-        fprintf('%.4f ', best_vector); % 최적 벡터 출력
+        fprintf('%.4f', best_vector); % 최적 벡터 출력
+        fprintf('\n');
+        fprintf('Best TR: %.4f, %.4f \n', best_result(1), best_result(2));
         fprintf('\n');
     end
     min_vector = best_vector;
